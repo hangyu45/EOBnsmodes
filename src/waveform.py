@@ -21,6 +21,7 @@ import scipy.optimize as opt
 import scipy.interpolate as interp
 import scipy.integrate as integ
 import scipy.special as special
+import warnings
 from numba import njit
 
 from .constants import *
@@ -107,7 +108,13 @@ def get_hDL_M_modes_vs_t(**kwargs):
 
     # matter effects of M1
     R1_M1 = kwargs['R1_M1']
+    if R1_M1 < 2.:
+        warnings.warn("R1_M1 set to the lower limit of 2. To zero tide for BH, please set lam1_l2_M1_5 and lam1_l3_M1_7 to zero. ")
+        R1_M1 = 2.
     I1_M1_3 = kwargs['I1_M1_3']
+    if I1_M1_3 < 4.:
+        warnings.warn("I1_M1_3 set to the lower limit of 4. To zero tide for BH, please set lam1_l2_M1_5 and lam1_l3_M1_7 to zero. ")
+        I1_M1_3 = 4.
     Ces1 = kwargs['Ces1']
     lam1_l2_M1_5 = kwargs['lam1_l2_M1_5']
     lam1_l3_M1_7 = kwargs['lam1_l3_M1_7']
@@ -163,7 +170,13 @@ def get_hDL_M_modes_vs_t(**kwargs):
 
     # matter effects of M2
     R2_M2 = kwargs['R2_M2']
+    if R2_M2 < 2.:
+        warnings.warn("R2_M2 set to the lower limit of 2. To zero tide for BH, please set lam2_l2_M2_5 and lam2_l3_M2_7 to zero. ")
+        R2_M2 = 2.
     I2_M2_3 = kwargs['I2_M2_3']
+    if I2_M2_3 < 4.:
+        warnings.warn("I2_M2_3 set to the lower limit of 4. To zero tide for BH, please set lam2_l2_M2_5 and lam2_l3_M2_7 to zero. ")
+        I2_M2_3 = 4.
     Ces2 = kwargs['Ces2']
     lam2_l2_M2_5 = kwargs['lam2_l2_M2_5']
     lam2_l3_M2_7 = kwargs['lam2_l3_M2_7']
@@ -264,13 +277,17 @@ def get_hDL_M_modes_vs_t(**kwargs):
     t_tot_M_est = 5./(256. * eta) * r_M_init**4.
 
     # evolve EOB dynamics
-    r_in_R1_R2 = 0.8
+
+    # let the dynamics run slightly beyond contact; waveform will be tapered to zero earlier
+    r_M_term = np.max(
+        np.array([3.05, 0.8 * (R1+R2) / rMt])
+    )
 
     @njit
     def terminator(tt, yy):
         r_M = yy[0]
         p_r_mu_tort = yy[1]
-        resi = r_M - r_in_R1_R2*(R1+R2)/rMt
+        resi = r_M - r_M_term
 
         return resi
 
@@ -295,7 +312,11 @@ def get_hDL_M_modes_vs_t(**kwargs):
     
     # physical time in s
     tt = sol.t * tMt
-    
+
+    # taper the waveform at 1.1 * (R1+R2), slightly before contact
+    r_M_taper_on = np.max(
+        np.array([3.2, 1.1*(R1+R2) / rMt])
+    )
     Momega, vp, hDL_M_modes \
         = dyn.get_hDL_M_from_pp_tide_var(sol.t, sol.y, par, 
              ll, mm,
@@ -305,8 +326,8 @@ def get_hDL_M_modes_vs_t(**kwargs):
              rholm_coeff, rholm_log_coeff, cflmS_coeff, deltalm_coeff, 
              nqc_coeff, 
              h_tide_mult_coeff_1, h_tide_mult_coeff_2, 
-             r_M_taper_on=1.1*(R1+R2)/rMt, 
-             r_M_taper_off = r_in_R1_R2*(R1+R2)/rMt,
+             r_M_taper_on=r_M_taper_on, 
+             r_M_taper_off = r_M_term,
              )
 
 
@@ -395,7 +416,13 @@ def get_hDL_M_modes_no_tspin_vs_t(**kwargs):
 
     # matter effects of M1
     R1_M1 = kwargs['R1_M1']
+    if R1_M1 < 2.:
+        warnings.warn("R1_M1 set to the lower limit of 2. To zero tide for BH, please set lam1_l2_M1_5 and lam1_l3_M1_7 to zero. ")
+        R1_M1 = 2.
     I1_M1_3 = kwargs['I1_M1_3']
+    if I1_M1_3 < 4.:
+        warnings.warn("I1_M1_3 set to the lower limit of 4. To zero tide for BH, please set lam1_l2_M1_5 and lam1_l3_M1_7 to zero. ")
+        I1_M1_3 = 4.
     Ces1 = kwargs['Ces1']
     lam1_l2_M1_5 = kwargs['lam1_l2_M1_5']
     lam1_l3_M1_7 = kwargs['lam1_l3_M1_7']
@@ -451,7 +478,13 @@ def get_hDL_M_modes_no_tspin_vs_t(**kwargs):
 
     # matter effects of M2
     R2_M2 = kwargs['R2_M2']
+    if R2_M2 < 2.:
+        warnings.warn("R2_M2 set to the lower limit of 2. To zero tide for BH, please set lam2_l2_M2_5 and lam2_l3_M2_7 to zero. ")
+        R2_M2 = 2.
     I2_M2_3 = kwargs['I2_M2_3']
+    if I2_M2_3 < 4.:
+        warnings.warn("I2_M2_3 set to the lower limit of 4. To zero tide for BH, please set lam2_l2_M2_5 and lam2_l3_M2_7 to zero. ")
+        I2_M2_3 = 4.
     Ces2 = kwargs['Ces2']
     lam2_l2_M2_5 = kwargs['lam2_l2_M2_5']
     lam2_l3_M2_7 = kwargs['lam2_l3_M2_7']
@@ -552,13 +585,17 @@ def get_hDL_M_modes_no_tspin_vs_t(**kwargs):
     t_tot_M_est = 5./(256. * eta) * r_M_init**4.
 
     # evolve EOB dynamics
-    r_in_R1_R2 = 0.8
+
+    # let the dynamics run slightly beyond contact; waveform will be tapered to zero earlier
+    r_M_term = np.max(
+        np.array([3.05, 0.9 * (R1+R2) / rMt])
+    )
 
     @njit
     def terminator(tt, yy):
         r_M = yy[0]
         p_r_mu_tort = yy[1]
-        resi = r_M - r_in_R1_R2*(R1+R2)/rMt
+        resi = r_M - r_M_term
 
         return resi
 
@@ -583,7 +620,11 @@ def get_hDL_M_modes_no_tspin_vs_t(**kwargs):
     
     # physical time in s
     tt = sol.t * tMt
-    
+
+    # taper the waveform at 1.1 * (R1+R2), slightly before contact
+    r_M_taper_on = np.max(
+        np.array([3.2, 1.1*(R1+R2) / rMt])
+    )
     Momega, vp, hDL_M_modes \
         = dyn.get_hDL_M_from_pp_tide_var(sol.t, sol.y, par, 
              ll, mm,
@@ -593,8 +634,8 @@ def get_hDL_M_modes_no_tspin_vs_t(**kwargs):
              rholm_coeff, rholm_log_coeff, cflmS_coeff, deltalm_coeff, 
              nqc_coeff, 
              h_tide_mult_coeff_1, h_tide_mult_coeff_2, 
-             r_M_taper_on=1.1*(R1+R2)/rMt, 
-             r_M_taper_off = r_in_R1_R2*(R1+R2)/rMt,
+             r_M_taper_on=r_M_taper_on, 
+             r_M_taper_off = r_M_term,
              )
 
 
